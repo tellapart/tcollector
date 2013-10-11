@@ -14,6 +14,10 @@
 #
 # tcollector.py
 #
+# NOTE(TELLAPART): This file is sourced from
+# https://github.com/OpenTSDB/tcollector @ commit
+# 0489ce7c7d17a460f142c79b84ddbd8b4de8a68e, with some slight
+# modifications to templatize parts of this script.
 """Simple manager for collection scripts that run and gather data.
    The tcollector gathers the data and sends it to the TSD for storage."""
 #
@@ -268,7 +272,7 @@ class ReaderThread(threading.Thread):
                 combination of (metric, tags).  Values older than
                 evictinterval will be removed from the cache to save RAM.
                 Invariant: evictinterval > dedupinterval
-              default_host_tag: The default host tag to be added if the host tag 
+              default_host_tag: The default host tag to be added if the host tag
                 is not present.
         """
         assert evictinterval > dedupinterval, "%r <= %r" % (evictinterval,
@@ -646,7 +650,7 @@ class SenderThread(threading.Thread):
                 LOG.debug('SENDING: %s', line)
         else:
             out = "".join("put %s%s\n" % (line, self.tagstr) for line in self.sendq)
-            
+
         if not out:
             LOG.debug('send_data no data?')
             return

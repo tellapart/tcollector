@@ -3,9 +3,13 @@
 # Semi Universal start-stop script
 # Keep it sh compatible, test with bash, dash, ksh, and zsh.
 
-# TSD_HOST=dns.name.of.tsd
-SCRIPT_DIR="$(dirname $(readlink -f $0))"
-TCOLLECTOR_PATH=${TCOLLECTOR_PATH-"${SCRIPT_DIR}"}
+# NOTE(TELLAPART): This file is sourced from
+# https://github.com/OpenTSDB/tcollector @ commit
+# 0489ce7c7d17a460f142c79b84ddbd8b4de8a68e, with some slight
+# modifications to templatize parts of this script.
+
+TSD_HOST=%(tsd_host)s
+TCOLLECTOR_PATH=%(tcollector_path)
 test -n "$TSD_HOST" || {
     echo >&2 "TSD_HOST is not set in $0"
     exit 1
@@ -47,19 +51,11 @@ for i in "$PIDFILE" "$LOG"; do
     }
 done
 
-which_python () {
-    for python in /usr/bin/python2.6 /usr/bin/python2.5 /usr/bin/python; do
-        test -x "$python" && echo "$python" && return
-    done
-    echo >&2 'Could not find a Python interpreter'
-    exit 1
-}
-
-PYTHON=$(which_python)
+PYTHON=$(which python)
 
 start () {
     echo "Starting $PROG"
-    # eval is neccesary for zsh support as multiple-word variables are not 
+    # eval is neccesary for zsh support as multiple-word variables are not
     # split into words by default, see zsh help for SH_WORD_SPLIT.
     eval "$PYTHON $PROG $ARGS" >> $LOG 2>&1 &
 }
@@ -67,11 +63,11 @@ start () {
 # stop_program [signum]
 stop_program () {
     echo "Stopping $PROG"
-    pkill $1 -f "/usr/bin/python.* $PROG -c"
+    pkill $1 -f "$PROG -c"
 }
 
 status () {
-    if pgrep -f "/usr/bin/python.* $PROG -c" >/dev/null; then
+    if pgrep -f "$PROG -c" >/dev/null; then
         echo "$PROG" running
         return 0
     fi
@@ -119,7 +115,7 @@ case $COMMAND in
             start
         fi
         ;;
-    'stop') 
+    'stop')
         # stop is an alias in ksh93 for 'kill -s STOP'
         stop_program
         ;;
