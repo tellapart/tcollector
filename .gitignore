@@ -1,0 +1,4 @@
+syntax: glob
+
+*.swp
+tcollector.tar.gz
