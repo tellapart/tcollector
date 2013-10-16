@@ -55,7 +55,7 @@ ALIVE = True
 # Hopefully some kind of supervising daemon will then restart it.
 MAX_UNCAUGHT_EXCEPTIONS = 100
 DEFAULT_PORT = 4242
-MAX_REASONABLE_TIMESTAMP = 1600000000  # Good until September 2020 :)
+MAX_REASONABLE_TIMESTAMP = 1600000000000  # Good until September 2020 :)
 MAX_SENDQ_SIZE = 10000
 MAX_READQ_SIZE = 100000
 
