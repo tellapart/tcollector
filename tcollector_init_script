@@ -1,31 +1,34 @@
-#!/bin/sh
-
-# Semi Universal start-stop script
-# Keep it sh compatible, test with bash, dash, ksh, and zsh.
+#!/bin/bash
 
 # NOTE(TELLAPART): This file is sourced from
 # https://github.com/OpenTSDB/tcollector @ commit
 # 0489ce7c7d17a460f142c79b84ddbd8b4de8a68e, with some slight
 # modifications to templatize parts of this script.
 
-TSD_HOST=%(tsd_host)s
-TCOLLECTOR_PATH=%(tcollector_path)
-test -n "$TSD_HOST" || {
-    echo >&2 "TSD_HOST is not set in $0"
+TSD_HOSTS=%(tsd_hosts)s
+TCOLLECTOR_PATH=%(tcollector_path)s
+COLLECTORS_PATH=%(collectors_path)s
+
+# Setup PYTHONPATH for all the collectors.
+source %(ta_tools)s/setup_tellapart_path
+addpythonpath $(dirname "$COLLECTORS_PATH")
+
+test -n "$TSD_HOSTS" || {
+    echo >&2 "TSD_HOSTS is not set in $0"
     exit 1
 }
 
 HOSTNAME=$(hostname)
 PIDFILE=${PIDFILE-'/var/run/tcollector.pid'}
 PROG=$TCOLLECTOR_PATH/tcollector.py
-LOG=${LOG-'/var/log/tcollector.log'}
+LOG=${LOG-'%(tcollector_run_log_file)s'}
 COMMAND=$1
 
 # some shells fail to shift if nothing to shift
 test "$#" -gt 0 && {
     shift
 }
-ARGS="-c $TCOLLECTOR_PATH/collectors -H $TSD_HOST -t host=$HOSTNAME -P $PIDFILE"
+ARGS="-c $COLLECTORS_PATH -L $TSD_HOSTS -t host=$HOSTNAME -P $PIDFILE"
 ARGS="$ARGS $@"
 
 # Sanity checks.
