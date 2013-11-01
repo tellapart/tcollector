@@ -47,7 +47,7 @@ from optparse import OptionParser
 # global variables.
 COLLECTORS = {}
 GENERATION = 0
-DEFAULT_LOG = '/var/log/tcollector.log'
+DEFAULT_LOG = '/mnt/log/tcollector/tcollector.log'
 LOG = logging.getLogger('tcollector')
 ALIVE = True
 # If the SenderThread catches more than this many consecutive uncaught
