@@ -43,6 +43,7 @@ from Queue import Empty
 from Queue import Full
 from optparse import OptionParser
 
+from tellapart.util import aws_util
 
 # global variables.
 COLLECTORS = {}
@@ -260,7 +261,7 @@ class ReaderThread(threading.Thread):
        All data read is put into the self.readerq Queue, which is
        consumed by the SenderThread."""
 
-    def __init__(self, dedupinterval, evictinterval, default_host_tag):
+    def __init__(self, dedupinterval, evictinterval, default_tags):
         """Constructor.
             Args:
               dedupinterval: If a metric sends the same value over successive
@@ -272,8 +273,8 @@ class ReaderThread(threading.Thread):
                 combination of (metric, tags).  Values older than
                 evictinterval will be removed from the cache to save RAM.
                 Invariant: evictinterval > dedupinterval
-              default_host_tag: The default host tag to be added if the host tag
-                is not present.
+              default_tags: Dict of default tags -> values to be added if the
+                tags are not present.
         """
         assert evictinterval > dedupinterval, "%r <= %r" % (evictinterval,
                                                             dedupinterval)
@@ -284,7 +285,7 @@ class ReaderThread(threading.Thread):
         self.lines_dropped = 0
         self.dedupinterval = dedupinterval
         self.evictinterval = evictinterval
-        self.default_host_tag = default_host_tag
+        self.default_tags = default_tags
 
     def run(self):
         """Main loop for this thread.  Just reads from collectors,
@@ -333,9 +334,11 @@ class ReaderThread(threading.Thread):
             return
         metric, timestamp, value, tags = parsed.groups()
         timestamp = int(timestamp)
-        if " host=" not in tags:
-            tags += " host=%s" % self.default_host_tag
-            line += " host=%s" % self.default_host_tag
+
+        for tagk, tagv in self.default_tags.iteritems():
+          if ' %s=' % (tagk) not in tags:
+            tags += ' %s=%s' % (tagk, tagv)
+            line += ' %s=%s' % (tagk, tagv)
 
         # De-dupe detection...  To reduce the number of points we send to the
         # TSD, we suppress sending values of metrics that don't change to
@@ -833,12 +836,18 @@ def main(argv):
         return 1
     modules = load_etc_dir(options, tags)
 
-    if not 'host' in tags and not options.stdin:
-        default_host_tag = socket.gethostname()
-        LOG.warning('Tag "host" not specified, defaulting to %s.', default_host_tag)
-    elif 'host' in tags:
-        default_host_tag = tags['host']
-        del tags['host']
+    tagk_tagvfunc = {
+      'host': socket.gethostname,
+      'role': aws_util.GetEc2InstanceRole,
+    }
+    default_tags = {}
+    for tagk, tagvfunc in tagk_tagvfunc.iteritems():
+      if not tagk in tags and not options.stdin:
+        tagv = tagvfunc()
+        LOG.warning('Tag "%s" not specified, defaulting to %s.' % (tagk, tagv))
+      elif tagk in tags:
+        tagv = tags[tagk]
+        del tags[tagk]
 
     # prebuild the tag string from our tags dict
     tagstr = ''
@@ -855,7 +864,7 @@ def main(argv):
 
     # at this point we're ready to start processing, so start the ReaderThread
     # so we can have it running and pulling in data for us
-    reader = ReaderThread(options.dedupinterval, options.evictinterval, default_host_tag)
+    reader = ReaderThread(options.dedupinterval, options.evictinterval, default_tags)
     reader.start()
 
     # prepare list of (host, port) of TSDs given on CLI
