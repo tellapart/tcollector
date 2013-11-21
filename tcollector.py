@@ -848,6 +848,7 @@ def main(argv):
       elif tagk in tags:
         tagv = tags[tagk]
         del tags[tagk]
+      default_tags[tagk] = tagv
 
     # prebuild the tag string from our tags dict
     tagstr = ''
