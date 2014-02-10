@@ -88,7 +88,7 @@ def main():
     f_loadavg = open("/proc/loadavg", "r")
     f_entropy_avail = open("/proc/sys/kernel/random/entropy_avail", "r")
     f_interrupts = open("/proc/interrupts", "r")
-    numastats = open_sysfs_numa_stats()
+    # numastats = open_sysfs_numa_stats()
     utils.drop_privileges()
 
     while True:
@@ -131,8 +131,9 @@ def main():
             if m.group(1).startswith("cpu"):
                 cpu_m = re.match("cpu(\d+)", m.group(1))
                 if cpu_m:
-                    metric_percpu = '.percpu'
-                    tags = ' cpu=%s' % cpu_m.group(1)
+                  continue
+                  #   metric_percpu = '.percpu'
+                  #   tags = ' cpu=%s' % cpu_m.group(1)
                 else:
                     metric_percpu = ''
                     tags = ''
@@ -171,34 +172,34 @@ def main():
         for line in f_entropy_avail:
             print "proc.kernel.entropy_avail %d %s" % (ts, line.strip())
 
-        f_interrupts.seek(0)
-        ts = int(time.time())
-        # Get number of CPUs from description line.
-        num_cpus = len(f_interrupts.readline().split())
-        for line in f_interrupts:
-            cols = line.split()
+        # f_interrupts.seek(0)
+        # ts = int(time.time())
+        # # Get number of CPUs from description line.
+        # num_cpus = len(f_interrupts.readline().split())
+        # for line in f_interrupts:
+        #     cols = line.split()
 
-            irq_type = cols[0].rstrip(":")
-            if irq_type.isalnum():
-                if irq_type.isdigit():
-                    if cols[-2] == "PCI-MSI-edge" and "eth" in cols[-1]:
-                        irq_type = cols[-1]
-                    else:
-                        continue  # Interrupt type is just a number, ignore.
-                for i, val in enumerate(cols[1:]):
-                    if i >= num_cpus:
-                        # All values read, remaining cols contain textual
-                        # description
-                        break
-                    if not val.isdigit():
-                        # something is weird, there should only be digit values
-                        sys.stderr.write("Unexpected interrupts value %r in"
-                                         " %r: " % (val, cols))
-                        break
-                    print ("proc.interrupts %s %s type=%s cpu=%s"
-                           % (ts, val, irq_type, i))
+        #     irq_type = cols[0].rstrip(":")
+        #     if irq_type.isalnum():
+        #         if irq_type.isdigit():
+        #             if cols[-2] == "PCI-MSI-edge" and "eth" in cols[-1]:
+        #                 irq_type = cols[-1]
+        #             else:
+        #                 continue  # Interrupt type is just a number, ignore.
+        #         for i, val in enumerate(cols[1:]):
+        #             if i >= num_cpus:
+        #                 # All values read, remaining cols contain textual
+        #                 # description
+        #                 break
+        #             if not val.isdigit():
+        #                 # something is weird, there should only be digit values
+        #                 sys.stderr.write("Unexpected interrupts value %r in"
+        #                                  " %r: " % (val, cols))
+        #                 break
+        #             print ("proc.interrupts %s %s type=%s cpu=%s"
+        #                    % (ts, val, irq_type, i))
 
-        print_numa_stats(numastats)
+        # print_numa_stats(numastats)
 
         sys.stdout.flush()
         time.sleep(COLLECTION_INTERVAL)
