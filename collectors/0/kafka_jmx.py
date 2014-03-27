@@ -17,8 +17,12 @@ INTERVAL="60"
 USER = "kafka_user"
 
 # We add those files to the classpath if they exist.
+JAVA_HOME = os.getenv('JAVA_HOME', '/usr/lib/jvm/java-6-openjdk')
+JAVA = "%s/bin/java" % JAVA_HOME
+
+# We add those files to the classpath if they exist.
 CLASSPATH = [
-    "/usr/lib/jvm/default-java/lib/tools.jar",
+    "%s/lib/tools.jar" % JAVA_HOME,
 ]
 
 # Map certain JVM stats so they are unique and shorter
@@ -76,20 +80,12 @@ def main(argv):
             classpath.append(jar)
     classpath = ":".join(classpath)
 
-    jpid = "Kafka"
-    jps = subprocess.check_output("jps").split("\n")
-    for item in jps:
-      vals = item.split(" ")
-      if len(vals) == 2:
-        if vals[1] == "Kafka":
-          jpid = vals[0]
-          break
     jmx = subprocess.Popen(
         ["java", "-enableassertions", "-enablesystemassertions",  # safe++
          "-Xmx64m",  # Low RAM limit, to avoid stealing too much from prod.
          "-cp", classpath, "com.stumbleupon.monitoring.jmx",
          "--watch", INTERVAL, "--long", "--timestamp",
-         jpid,  # Name of the process.
+         "Kafka",  # Name of the process.
          # The remaining arguments are pairs (mbean_regexp, attr_regexp).
          # The first regexp is used to match one or more MBeans, the 2nd
          # to match one or more attributes of the MBeans matched.
