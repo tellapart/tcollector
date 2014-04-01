@@ -22,6 +22,13 @@ import errno
 # If we're running as root and this user exists, we'll drop privileges.
 USER = "nobody"
 
+_JAVA_HOME_DIR_CANDIDATES = [
+  # Used for the old pliny ami on opentsdb.
+  '/usr/lib/jdk1.6.0_45',
+  '/usr/lib/jvm/default-java',
+  '/usr/lib/jvm/java-7-openjdk-amd64',
+  '/usr/lib/jvm/java-6-openjdk',
+]
 
 def drop_privileges(user=USER):
     """Drops privileges if running as root."""
@@ -47,3 +54,15 @@ def is_sockfile(path):
     err("warning: couldn't stat(%r): %s" % (path, e))
     return None
   return s.st_mode & stat.S_IFSOCK == stat.S_IFSOCK
+
+
+def get_java_home():
+  """Try to guess JAVA_HOME.
+
+  Returns:
+    Filesystem path for JAVA_HOME if one could be found, else None.
+  """
+  for candidate in _JAVA_HOME_DIR_CANDIDATES:
+    if os.path.exists(candidate):
+      return candidate
+  return None

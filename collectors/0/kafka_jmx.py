@@ -17,7 +17,7 @@ INTERVAL="60"
 USER = "kafka_user"
 
 # We add those files to the classpath if they exist.
-JAVA_HOME = os.getenv('JAVA_HOME', '/usr/lib/jvm/java-6-openjdk')
+JAVA_HOME = utils.get_java_home()
 JAVA = "%s/bin/java" % JAVA_HOME
 
 # We add those files to the classpath if they exist.
@@ -81,7 +81,7 @@ def main(argv):
     classpath = ":".join(classpath)
 
     jmx = subprocess.Popen(
-        ["java", "-enableassertions", "-enablesystemassertions",  # safe++
+        [JAVA, "-enableassertions", "-enablesystemassertions",  # safe++
          "-Xmx64m",  # Low RAM limit, to avoid stealing too much from prod.
          "-cp", classpath, "com.stumbleupon.monitoring.jmx",
          "--watch", INTERVAL, "--long", "--timestamp",

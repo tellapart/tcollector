@@ -25,7 +25,7 @@ from collectors.lib import utils
 USER = "hbase"
 
 # Use JAVA_HOME env variable if set
-JAVA_HOME = os.getenv('JAVA_HOME', '/usr/lib/jdk1.6.0_45')
+JAVA_HOME = utils.get_java_home()
 JAVA = "%s/bin/java" % JAVA_HOME
 
 # We add those files to the classpath if they exist.
